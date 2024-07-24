@@ -13,7 +13,10 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Random;
 
 import static com.strangesmell.buckshotroulette.BuckshotRoulette.MODID;
 import static com.strangesmell.buckshotroulette.Util.remove;
@@ -91,7 +94,7 @@ public class AI {
                     if (toolnum1[0] > 0 && toolnum2[3] > 0) {         //且对手有蜘蛛网
                         addAllToolIndex(1, FISHING_ROD, toolList1, toolList, index);//todo:若能秒则不用
                         toolnum1[0]--;
-                        addAllToolIndex(1, COBWEB, toolList1, toolList, index);
+                        addAllToolIndex(1, COBWEB, toolList2, toolList, index);
                         toolnum2[3]--;
                     }
                     if (toolnum1[0] > 0 && toolnum2[1] > 0) {//todo:获得当前tnt概率，是否用鱼竿拿望远镜
@@ -185,16 +188,16 @@ public class AI {
                 }
                 if (toolnum2[0] > 0) {       //若有鱼竿但无蜘蛛网
                     if (toolnum2[0] > 0 && toolnum1[3] > 0) {         //且对手有蜘蛛网
-                        addAllToolIndex(1, FISHING_ROD, toolList1, toolList, index);//todo:若能秒则不用
+                        addAllToolIndex(1, FISHING_ROD, toolList2, toolList, index);//todo:若能秒则不用
                         toolnum2[0]--;
                         addAllToolIndex(1, COBWEB, toolList1, toolList, index);
                         toolnum1[3]--;
                     }
                     if (toolnum2[0] > 0 && toolnum1[1] > 0) {//todo:获得当前tnt概率，是否用鱼竿拿望远镜
                         if (getPercentageOfTNT(tableBlockEntity, dealer) < 0.7 && getPercentageOfTNT(tableBlockEntity, dealer) > 0.3) {
-                            addAllToolIndex(1, FISHING_ROD, toolList1, toolList, index);
+                            addAllToolIndex(1, FISHING_ROD, toolList2, toolList, index);
                             toolnum2[0]--;
-                            addAllToolIndex(1, SPYGLASS, toolList2, toolList, index);
+                            addAllToolIndex(1, SPYGLASS, toolList1, toolList, index);
                             toolnum1[1]--;
                         }
                     }
@@ -347,20 +350,20 @@ public class AI {
             Level level = blockEntity.getLevel();
             if (!tableBlockEntity.isRead) {
                 if (tableBlockEntity.name1.equals("") || tableBlockEntity.name2.equals("")) {
-                    if (!(Objects.equals(tableBlockEntity.name1, dealer.getStringName() + "1") || Objects.equals(tableBlockEntity.name2, dealer.getStringName() + "2"))) {
+                    //if (!((Objects.equals(tableBlockEntity.name1, dealer.getStringName() + "1") &&Objects.equals(tableBlockEntity.name1, ""))|| Objects.equals(tableBlockEntity.name2, dealer.getStringName() + "2"))) {
                         if (tableBlockEntity.name1.equals("")) {
                             tableBlockEntity.name1 = dealer.getStringName() + "1";
                             dealer.setPlace(1);
                             tableBlockEntity.isPlayer1 = false;
                         } else {
-                            if (tableBlockEntity.name2.equals("")) {
+                            if (tableBlockEntity.name2.equals("")&&dealer.getPlace()!=1&&dealer.canJoinPlayer2) {
                                 tableBlockEntity.name2 = dealer.getStringName() + "2";
                                 dealer.setPlace(2);
                                 tableBlockEntity.isRead = true;
                                 tableBlockEntity.isPlayer2 = false;
                             }
                         }
-                    }
+                    //}
                 }
             } else {
                 if (tableBlockEntity.begin) {
@@ -379,6 +382,10 @@ public class AI {
                     if (tableBlockEntity.initAmmunition) {
                         tableBlockEntity.initAmmunition();
                         tableBlockEntity.initAmmunition = false;
+                    }
+                    if(tableBlockEntity.ammunition==0){
+                        TableBlock.end(tableBlockEntity.getLevel(),tableBlockEntity);
+                        return;
                     }
                     dealer.shouldGetToolList = true;
                     if (tableBlockEntity.chestFinish) {
@@ -423,8 +430,6 @@ public class AI {
                                     if (tableBlockEntity.isPlayer2) {
                                         byName(level, tableBlockEntity.name2).sendSystemMessage(Component.translatable(MODID + ".first").append(tableBlockEntity.name1));
                                     }
-
-
                                 } else {
                                     if (tableBlockEntity.isPlayer1) {
                                         byName(level, tableBlockEntity.name1).sendSystemMessage(Component.translatable(MODID + ".first").append(tableBlockEntity.name2));
@@ -480,10 +485,14 @@ public class AI {
                                 tableBlockEntity.selectPlayerTime = false;
                                 //may should add a time flag
                                 if (remove(0, tableBlockEntity.ammunitionList).is(Items.GUNPOWDER)) {
+                                    if(!select.equals(dealer.getTableName())){
+                                        dealer.playSound(SoundEvents.VEX_CHARGE,2,2);
+                                    }
                                     tableBlockEntity.tntExplosion = true;
                                     tableBlockEntity.ammunition--;
                                     tableBlockEntity.goodAmmunition--;
                                     if (select.equals(tableBlockEntity.name1)) {
+
                                         tableBlockEntity.tntStartTime = tableBlockEntity.roundBeginTimeMax;
                                         if (tableBlockEntity.health1 >= 2) {
                                             tableBlockEntity.health1--;
@@ -514,6 +523,11 @@ public class AI {
                                         dealer.shouldGetToolList = true;
                                     }
                                 } else {
+                                    if(select.equals(dealer.getTableName())){
+                                        dealer.playSound(SoundEvents.VEX_CHARGE,2,2);
+                                    }else{
+                                        dealer.playSound(SoundEvents.VEX_AMBIENT,2,2);
+                                    }
                                     tableBlockEntity.tntExplosion = false;
                                     if (select.equals(tableBlockEntity.name1)) {
                                         tableBlockEntity.tntStartTime = tableBlockEntity.roundBeginTimeMax;
@@ -538,6 +552,9 @@ public class AI {
                             }
 
                             if (tableBlockEntity.isFishingTime) {
+                                if(index==-1){
+                                    index = getRandomRightIndex(tableBlockEntity.player2);
+                                }
                                 if (index >= 0 && index < 8) {
                                     ItemStack itemStack = tableBlockEntity.player2.get(index);
                                     if (itemStack.is(Items.FISHING_ROD)) return;
@@ -571,6 +588,9 @@ public class AI {
 
                                 }
                             } else {
+                                tableBlockEntity.selectPlayerTime = true;
+                                tableBlockEntity.spyglass = false;
+
                                 level.sendBlockUpdated(tableBlockEntity.getBlockPos(), tableBlockEntity.getBlockState(), tableBlockEntity.getBlockState(), 2);
                                 return;
                             }
@@ -613,6 +633,11 @@ public class AI {
                                 //may should add a time flag
 
                                 if (remove(0, tableBlockEntity.ammunitionList).is(Items.GUNPOWDER)) {
+                                    if(select.equals(dealer.getTableName())){
+                                        dealer.playSound(SoundEvents.VEX_HURT,1,1);
+                                    }else{
+                                        dealer.playSound(SoundEvents.VEX_CHARGE,1,1);
+                                    }
                                     tableBlockEntity.tntExplosion = true;
                                     tableBlockEntity.ammunition--;
                                     tableBlockEntity.goodAmmunition--;
@@ -648,6 +673,11 @@ public class AI {
                                         dealer.shouldGetToolList = true;
                                     }
                                 } else {
+                                    if(select.equals(dealer.getTableName())){
+                                        dealer.playSound(SoundEvents.VEX_CHARGE,1,1);
+                                    }else{
+                                        dealer.playSound(SoundEvents.VEX_AMBIENT,1,1);
+                                    }
                                     tableBlockEntity.tntExplosion = false;
                                     if (select.equals(tableBlockEntity.name1)) {
                                         tableBlockEntity.tntStartTime = tableBlockEntity.roundBeginTimeMax;
@@ -674,6 +704,9 @@ public class AI {
 
                             if (tableBlockEntity.isFishingTime) {
                                 if (index >= 0 && index < 8) {
+                                    if(index==-1){
+                                        index = getRandomRightIndex(tableBlockEntity.player1);
+                                    }
                                     ItemStack itemStack = tableBlockEntity.player1.get(index);
                                     if (itemStack.is(Items.FISHING_ROD)) return;
                                     tableBlockEntity.player1.set(index, ItemStack.EMPTY);
@@ -830,5 +863,17 @@ public class AI {
 
     public int getUsedNum(TableBlockEntity tableBlockEntity) {
         return tableBlockEntity.ammunitionNum - tableBlockEntity.ammunition;
+    }
+
+    public int getRandomRightIndex(NonNullList<ItemStack> nonNullList){
+        List<Integer> list =NonNullList.create();
+        for(int i =0;i<nonNullList.size();i++){
+            if(!nonNullList.get(i).isEmpty()) {
+                list.add(i);
+            }
+        }
+        if(list.size()==0) return -1;
+        Random random = new Random();
+        return list.get(random.nextInt(0,list.size()));
     }
 }

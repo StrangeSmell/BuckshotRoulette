@@ -26,13 +26,17 @@ public class Room extends Structure {
 
     @Override
     protected Optional<GenerationStub> findGenerationPoint(GenerationContext pContext) {
+
         return onTopOfChunkCenter(pContext, Heightmap.Types.WORLD_SURFACE_WG, structurePiecesBuilder -> this.generatePieces(structurePiecesBuilder, pContext));
     }
 
     private void generatePieces(StructurePiecesBuilder pBuilder, Structure.GenerationContext pContext) {
         ChunkPos chunkpos = pContext.chunkPos();
+        int i = chunkpos.getMiddleBlockX();
+        int j = chunkpos.getMiddleBlockZ();
+        int k = pContext.chunkGenerator().getFirstOccupiedHeight(i, j, Heightmap.Types.WORLD_SURFACE_WG, pContext.heightAccessor(), pContext.randomState());
+        BlockPos blockpos = new BlockPos(chunkpos.getMiddleBlockX(), k, chunkpos.getMiddleBlockZ());
         WorldgenRandom worldgenrandom = pContext.random();
-        BlockPos blockpos = new BlockPos(chunkpos.getMinBlockX()+8, 64, chunkpos.getMinBlockZ()+8);
         Rotation rotation = Rotation.getRandom(worldgenrandom);
         RoomStructurePieces.addPieces(pContext.structureTemplateManager(), blockpos, rotation, pBuilder, worldgenrandom);
     }

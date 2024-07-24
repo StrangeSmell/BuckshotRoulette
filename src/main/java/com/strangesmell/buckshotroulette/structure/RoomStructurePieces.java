@@ -78,7 +78,7 @@ public class RoomStructurePieces {
         }
 
         private static BlockPos makePosition(ResourceLocation pLocation, BlockPos pPos, int pDown) {
-            return pPos.offset(RoomStructurePieces.OFFSETS.get(pLocation)).below(pDown);
+            return pPos.offset(RoomStructurePieces.OFFSETS.get(pLocation)).below(2);
         }
         @Override
         protected void addAdditionalSaveData(StructurePieceSerializationContext pContext, CompoundTag pTag) {

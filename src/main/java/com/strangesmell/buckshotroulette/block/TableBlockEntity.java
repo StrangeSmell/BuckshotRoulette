@@ -151,6 +151,9 @@ public class TableBlockEntity extends BlockEntity {
         player1 = NonNullList.withSize(8, ItemStack.EMPTY);
         player2 = NonNullList.withSize(8, ItemStack.EMPTY);
         ammunitionList = NonNullList.create();
+        ammunition=0;
+        goodAmmunition=0;
+        badAmmunition=0;
         addItem1 = NonNullList.withSize(1, ItemStack.EMPTY);
         addItem2 = NonNullList.withSize(1, ItemStack.EMPTY);
         pistonItem = NonNullList.withSize(1, ItemStack.EMPTY);
@@ -195,6 +198,11 @@ public class TableBlockEntity extends BlockEntity {
                 ammunitionList.set(i, new ItemStack(Items.REDSTONE));
                 badAmmunition++;
             }
+        }
+        if(goodAmmunition==0){
+            ammunitionList.set(random.nextInt(0,ammunition), new ItemStack(Items.GUNPOWDER));
+            goodAmmunition++;
+            badAmmunition--;
         }
         if(isPlayer1){
             byName(level, name1).sendSystemMessage(Component.translatable("gunpowderNum").append(goodAmmunition + ""));

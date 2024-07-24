@@ -1,6 +1,7 @@
 package com.strangesmell.buckshotroulette.block;
 
 import com.strangesmell.buckshotroulette.BuckshotRoulette;
+import com.strangesmell.buckshotroulette.Config;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -407,7 +408,11 @@ public class TableBlock extends BaseEntityBlock {
 
     public void begin(Player player) {
         //收取赌注
+        if(!Config.have_stake){
+            return;
+        }
         double amount = 0;
+
         if (player.getAttribute(Attributes.MAX_HEALTH).getModifier(uuid) != null) {
             amount = player.getAttribute(Attributes.MAX_HEALTH).getModifier(uuid).getAmount();
             player.getAttribute(Attributes.MAX_HEALTH).removePermanentModifier(uuid);
@@ -449,6 +454,10 @@ public class TableBlock extends BaseEntityBlock {
         Player player = byName(tableBlockEntity.getLevel(), winner);
 
         player.sendSystemMessage(Component.translatable(MODID + ".winner"));
+        player.sendSystemMessage(Component.translatable(MODID + ".stronger"));
+        if(!Config.have_stake){
+            return;
+        }
         double amount = 0;
         if (player.getAttribute(Attributes.MAX_HEALTH).getModifier(uuid) != null) {
             amount = player.getAttribute(Attributes.MAX_HEALTH).getModifier(uuid).getAmount();
@@ -456,7 +465,7 @@ public class TableBlock extends BaseEntityBlock {
         }
         AttributeModifier modifier = new AttributeModifier(uuid, MODID + "modifier", amount + 2, AttributeModifier.Operation.ADDITION);
         player.getAttribute(Attributes.MAX_HEALTH).addPermanentModifier(modifier);
-        player.sendSystemMessage(Component.translatable(MODID + ".stronger"));
+
 
     }
     public static void player1Dead(Level level, TableBlockEntity tableBlockEntity) {

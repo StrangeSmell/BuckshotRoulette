@@ -2,7 +2,6 @@ package com.strangesmell.buckshotroulette.entity;
 
 import com.strangesmell.buckshotroulette.BuckshotRoulette;
 import com.strangesmell.buckshotroulette.block.TableBlockEntity;
-import net.minecraft.client.gui.components.tabs.Tab;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
@@ -25,7 +24,6 @@ import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.monster.Monster;
-import net.minecraft.world.entity.monster.Vex;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.raid.Raider;
 import net.minecraft.world.item.ItemStack;
@@ -51,6 +49,7 @@ public class Dealer extends Monster {
     private BlockPos boundOrigin;
     private boolean hasLimitedLife;
     private boolean hasTable;
+    public boolean canJoinPlayer2=false;
     private int limitedLifeTicks;
     public int stepTicks=0;
 
@@ -125,6 +124,7 @@ public class Dealer extends Monster {
         ContainerHelper.loadAllItems(tag, ammunitionList);
         toolList = tag.getIntArray("toolList");
         shouldGetToolList = tag.getBoolean("shouldGetToolList");
+        canJoinPlayer2 = tag.getBoolean("canJoinPlayer2");
         stepTicks = tag.getInt("stepTicks");
         if (tag.contains("LifeTicks")) {
             this.setLimitedLife(tag.getInt("LifeTicks"));
@@ -137,6 +137,7 @@ public class Dealer extends Monster {
         ContainerHelper.saveAllItems(tag, ammunitionList);
         tag.putIntArray("toolList", toolList);
         tag.putBoolean("shouldGetToolList", shouldGetToolList);
+        tag.putBoolean("canJoinPlayer2", canJoinPlayer2);
         tag.putInt("stepTicks", stepTicks);
         if (this.hasLimitedLife) {
             tag.putInt("LifeTicks", this.limitedLifeTicks);
@@ -237,13 +238,8 @@ public class Dealer extends Monster {
                                 this.blockPos = blockpos$mutableblockpos;
                                 setBoundOrigin(this.blockPos);
                                 blockEntity = level().getBlockEntity(blockPos);
-                                if(blockEntity instanceof TableBlockEntity tableBlockEntity) {
-                                    if(tableBlockEntity.name1.equals("")||tableBlockEntity.name1.equals(dealer.getTableName())){
-                                        hasTable = true;
-                                        return true;
-                                    }
-
-                                }
+                                hasTable = true;
+                                return true;
                             }
                         }
                     }
@@ -259,7 +255,11 @@ public class Dealer extends Monster {
 
         public void start() {
             if (findNearestBlock()) {
-                Dealer.this.moveControl.setWantedPosition(blockPos.getX() + 0.5, blockPos.getY() + 1.2, blockPos.getZ() + 1, 1.0D);
+                if(Dealer.this.getPlace()==2){
+                    Dealer.this.moveControl.setWantedPosition(blockPos.getX() + 0.5, blockPos.getY() + 1, blockPos.getZ() , 1.0D);
+                    return;
+                }
+                Dealer.this.moveControl.setWantedPosition(blockPos.getX() + 0.5, blockPos.getY() + 1, blockPos.getZ() + 1, 1.0D);
             }
         }
 
@@ -277,7 +277,12 @@ public class Dealer extends Monster {
             } else {
                 BlockState blockstate = p_25153_.getBlockState(pos);
                 if (blockstate.is(BuckshotRoulette.TableBlock.get())) {
-                    return ((TableBlockEntity) (dealer.level().getBlockEntity(pos))).name1.equals("")||((TableBlockEntity) (dealer.level().getBlockEntity(pos))).name1.equals(dealer.getTableName());
+                    if(Dealer.this.canJoinPlayer2){
+                        return ((TableBlockEntity) (dealer.level().getBlockEntity(pos))).name1.equals("")||((TableBlockEntity) (dealer.level().getBlockEntity(pos))).name1.equals(dealer.getTableName())||((TableBlockEntity) (dealer.level().getBlockEntity(pos))).name2.equals("")||((TableBlockEntity) (dealer.level().getBlockEntity(pos))).name2.equals(dealer.getTableName());
+                    }else{
+                        return ((TableBlockEntity) (dealer.level().getBlockEntity(pos))).name1.equals("")||((TableBlockEntity) (dealer.level().getBlockEntity(pos))).name1.equals(dealer.getTableName());
+                    }
+                    //return ((TableBlockEntity) (dealer.level().getBlockEntity(pos))).name1.equals("")||((TableBlockEntity) (dealer.level().getBlockEntity(pos))).name1.equals(dealer.getTableName());
                 } else return false;
             }
         }
@@ -350,8 +355,11 @@ public class Dealer extends Monster {
                 BlockPos blockpos1;
                 if (Dealer.this.hasTable) {
                     blockpos1 = blockpos.offset(Dealer.this.random.nextInt(1), Dealer.this.random.nextInt(1), Dealer.this.random.nextInt(1));
-
-                    Dealer.this.moveControl.setWantedPosition((double) blockpos1.getX()+0.5, (double) blockpos1.getY() + 1, (double) blockpos1.getZ()+1, 0.25D);
+                    if(Dealer.this.getPlace()==1){
+                        Dealer.this.moveControl.setWantedPosition((double) blockpos1.getX()+0.5, (double) blockpos1.getY() + 1, (double) blockpos1.getZ()+1, 0.25D);
+                    }else if(Dealer.this.getPlace()==2){
+                        Dealer.this.moveControl.setWantedPosition((double) blockpos1.getX()+0.5, (double) blockpos1.getY() + 1, (double) blockpos1.getZ(), 0.25D);
+                    }
                     if (Dealer.this.getTarget() == null) {
                         Dealer.this.getLookControl().setLookAt((double) blockpos1.getX() + 0.5D, (double) blockpos1.getY() + 0.5D, (double) blockpos1.getZ() + 0.5D, 180.0F, 20.0F);
                     }
