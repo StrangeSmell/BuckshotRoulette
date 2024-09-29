@@ -2,6 +2,7 @@ package com.strangesmell.buckshotroulette.block;
 
 import com.strangesmell.buckshotroulette.BuckshotRoulette;
 import com.strangesmell.buckshotroulette.Config;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -55,11 +56,13 @@ public class TableBlock extends BaseEntityBlock {
                                 tableBlockEntity.isPlayer1=true;
                                 tableBlockEntity.name1 = player.getName().getString();
                                 player.sendSystemMessage(Component.translatable(MODID + ".ready"));
+                                player.sendSystemMessage(Component.translatable(MODID + ".ready2").withStyle(ChatFormatting.RED));
                             } else {
                                 if (tableBlockEntity.name2.equals("")) {
                                     tableBlockEntity.isPlayer2=true;
                                     tableBlockEntity.name2 = player.getName().getString();
                                     player.sendSystemMessage(Component.translatable(MODID + ".ready"));
+                                    player.sendSystemMessage(Component.translatable(MODID + ".ready2").withStyle(ChatFormatting.RED));
                                     tableBlockEntity.isRead = true;
                                     if(tableBlockEntity.isPlayer1){
                                         Player player1 = byName(level, tableBlockEntity.name1);
@@ -132,13 +135,16 @@ public class TableBlock extends BaseEntityBlock {
                                 if (tableBlockEntity.shouldReRandom) {//随机玩家先手
                                     if (tableBlockEntity.random.nextInt(1, 3) == 1) {
                                         tableBlockEntity.player1Round = true;
+                                        tableBlockEntity.player2Round = false;
                                         if(tableBlockEntity.isPlayer1) byName(level, tableBlockEntity.name1).sendSystemMessage(Component.translatable(MODID + ".first").append(tableBlockEntity.name1));
                                         if(tableBlockEntity.isPlayer2) byName(level, tableBlockEntity.name2).sendSystemMessage(Component.translatable(MODID + ".first").append(tableBlockEntity.name1));
 
                                     } else {
+                                        tableBlockEntity.player2Round = true;
+                                        tableBlockEntity.player1Round = false;
                                         if(tableBlockEntity.isPlayer1) byName(level, tableBlockEntity.name1).sendSystemMessage(Component.translatable(MODID + ".first").append(tableBlockEntity.name2));
                                         if(tableBlockEntity.isPlayer2) byName(level, tableBlockEntity.name2).sendSystemMessage(Component.translatable(MODID + ".first").append(tableBlockEntity.name2));
-                                        tableBlockEntity.player2Round = true;
+
                                     }
 
                                 }
@@ -174,8 +180,26 @@ public class TableBlock extends BaseEntityBlock {
                                     //获取选取的玩家
                                     String select = "";
                                     Vec3 viewPose = result.getLocation();
-                                    if (viewPose.z - pos.getZ() > 0.5) select = tableBlockEntity.name1;
-                                    else select = tableBlockEntity.name2;
+/*                                    String s ;
+                                    if(tableBlockEntity.ammunitionList.get(0).is(Items.GUNPOWDER)){
+                                        s="isGunpowder";
+                                    }else s="noGunpowder";*/
+                                    if (viewPose.z - pos.getZ() > 0.5) {
+                                        select = tableBlockEntity.name1;
+/*                                        byName(level, tableBlockEntity.name1).sendSystemMessage(Component.literal(tableBlockEntity.name1+" ").append(Component.translatable("useTo")).append(Component.literal(tableBlockEntity.name1+" ")).append(Component.translatable(s)));
+                                        if(tableBlockEntity.isPlayer2){
+                                            byName(level, tableBlockEntity.name2).sendSystemMessage(Component.literal(tableBlockEntity.name1+" ").append(Component.translatable("useTo")).append(Component.literal(tableBlockEntity.name1+" ")).append(Component.translatable(s)));
+                                        }*/
+                                    }
+                                    else {
+                                        select = tableBlockEntity.name2;
+/*                                        byName(level, tableBlockEntity.name1).sendSystemMessage(Component.literal(tableBlockEntity.name1+" ").append(Component.translatable("useTo")).append(Component.literal(tableBlockEntity.name2+" ")).append(Component.translatable(s)));
+                                        if(tableBlockEntity.isPlayer2){
+                                            byName(level, tableBlockEntity.name2).sendSystemMessage(Component.literal(tableBlockEntity.name1+" ").append(Component.translatable("useTo")).append(Component.literal(tableBlockEntity.name2+" ")).append(Component.translatable(s)));
+
+                                        }*/
+
+                                    }
                                     if (select.equals("")) {
                                         level.sendBlockUpdated(pos, state, state, 2);
                                         return InteractionResult.CONSUME;
@@ -296,8 +320,28 @@ public class TableBlock extends BaseEntityBlock {
                                     //获取选取的玩家
                                     String select = "";
                                     Vec3 viewPose = result.getLocation();
-                                    if (viewPose.z - pos.getZ() > 0.5) select = tableBlockEntity.name1;
-                                    else select = tableBlockEntity.name2;
+                                    String s ;
+/*                                    if(tableBlockEntity.ammunitionList.get(0).is(Items.GUNPOWDER)){
+                                        s="isGunpowder";
+                                    }else s="noGunpowder";*/
+                                    if (viewPose.z - pos.getZ() > 0.5) {
+                                        select = tableBlockEntity.name1;
+/*                                        if(tableBlockEntity.isPlayer1){
+                                            byName(level, tableBlockEntity.name1).sendSystemMessage(Component.literal(tableBlockEntity.name2+" ").append(Component.translatable("useTo")).append(Component.literal(tableBlockEntity.name1+" ")).append(Component.translatable(s)));
+                                        }
+                                        byName(level, tableBlockEntity.name2).sendSystemMessage(Component.literal(tableBlockEntity.name2+" ").append(Component.translatable("useTo")).append(Component.literal(tableBlockEntity.name1+" ")).append(Component.translatable(s)));
+                                    */}
+                                    else {
+                                        select = tableBlockEntity.name2;
+/*
+                                        if(tableBlockEntity.isPlayer1){
+                                            byName(level, tableBlockEntity.name1).sendSystemMessage(Component.literal(tableBlockEntity.name2+" ").append(Component.translatable("useTo")).append(Component.literal(tableBlockEntity.name2+" ")).append(Component.translatable(s)));
+
+                                        }
+                                        byName(level, tableBlockEntity.name2).sendSystemMessage(Component.literal(tableBlockEntity.name2+" ").append(Component.translatable("useTo")).append(Component.literal(tableBlockEntity.name2+" ")).append(Component.translatable(s)));
+*/
+
+                                    }
                                     if (select.equals("")) {
                                         level.sendBlockUpdated(pos, state, state, 2);
                                         return InteractionResult.CONSUME;
@@ -422,7 +466,7 @@ public class TableBlock extends BaseEntityBlock {
     }
 
     public static void outOfAmmunition(TableBlockEntity tableBlockEntity) {
-        if (tableBlockEntity.ammunition == 0) {
+        if (tableBlockEntity.ammunition <= 0) {
             //弹药耗尽回合结束
             tableBlockEntity.initAmmunition = true;
             tableBlockEntity.shouldReRandom = false;
@@ -588,14 +632,27 @@ public class TableBlock extends BaseEntityBlock {
         if (itemStack.is(Items.SPYGLASS)) {
             //加一个init=30的int，>0时渲染红石或者火药
             level.playSound(null, tableBlockEntity.getBlockPos(), SoundEvents.SPYGLASS_USE, SoundSource.AMBIENT, 1, 1);
+            if(tableBlockEntity.isPlayer1){
+                byName(level,tableBlockEntity.name1).sendSystemMessage(Component.literal(useName).append(Component.translatable(MODID+".use_spyglass")));
+            }
+            if(tableBlockEntity.isPlayer2){
+                byName(level,tableBlockEntity.name2).sendSystemMessage(Component.literal(useName).append(Component.translatable(MODID+".use_spyglass")));
+            }
             player.sendSystemMessage(Component.translatable(MODID + ".spyglass").append(tableBlockEntity.ammunitionList.get(0).getDisplayName()));
             tableBlockEntity.spyglass = true;
+
         } else if (itemStack.is(Items.COBWEB)) {
             level.playSound(null, tableBlockEntity.getBlockPos(), SoundEvents.SPIDER_AMBIENT, SoundSource.AMBIENT, 1, 1);
             if (tableBlockEntity.name1.equals(useName)) {
                 tableBlockEntity.player2IsWeb = true;
             } else {
                 tableBlockEntity.player1IsWeb = true;
+            }
+            if(tableBlockEntity.isPlayer1){
+                byName(level,tableBlockEntity.name1).sendSystemMessage(Component.literal(useName).append(Component.translatable(MODID+".use_cobweb")));
+            }
+            if(tableBlockEntity.isPlayer2){
+                byName(level,tableBlockEntity.name2).sendSystemMessage(Component.literal(useName).append(Component.translatable(MODID+".use_cobweb")));
             }
             player.sendSystemMessage(Component.translatable(MODID + ".cobweb"));
         } else if (itemStack.is(Items.POTATO)) {
@@ -629,6 +686,12 @@ public class TableBlock extends BaseEntityBlock {
                     }
                 }
             }
+            if(tableBlockEntity.isPlayer1){
+                byName(level,tableBlockEntity.name1).sendSystemMessage(Component.literal(useName).append(Component.translatable(MODID+".use_potato")));
+            }
+            if(tableBlockEntity.isPlayer2){
+                byName(level,tableBlockEntity.name2).sendSystemMessage(Component.literal(useName).append(Component.translatable(MODID+".use_potato")));
+            }
             player.sendSystemMessage(Component.translatable(MODID + ".potato"));
         } else if (itemStack.is(Items.BLACK_DYE)) {
             level.playSound(null, tableBlockEntity.getBlockPos(), SoundEvents.GENERIC_EAT, SoundSource.AMBIENT, 1, 1);
@@ -640,6 +703,12 @@ public class TableBlock extends BaseEntityBlock {
                 tableBlockEntity.ammunitionList.set(0, new ItemStack(Items.REDSTONE));
                 tableBlockEntity.goodAmmunition--;
                 tableBlockEntity.badAmmunition++;
+            }
+            if(tableBlockEntity.isPlayer1){
+                byName(level,tableBlockEntity.name1).sendSystemMessage(Component.literal(useName).append(Component.translatable(MODID+".use_dye")));
+            }
+            if(tableBlockEntity.isPlayer2){
+                byName(level,tableBlockEntity.name2).sendSystemMessage(Component.literal(useName).append(Component.translatable(MODID+".use_dye")));
             }
             player.sendSystemMessage(Component.translatable(MODID + ".dye"));
         } else if (itemStack.is(Items.APPLE)) {
@@ -653,34 +722,70 @@ public class TableBlock extends BaseEntityBlock {
                     tableBlockEntity.health2++;
                 }
             }
+            if(tableBlockEntity.isPlayer1){
+                byName(level,tableBlockEntity.name1).sendSystemMessage(Component.literal(useName).append(Component.translatable(MODID+".use_apple")));
+            }
+            if(tableBlockEntity.isPlayer2){
+                byName(level,tableBlockEntity.name2).sendSystemMessage(Component.literal(useName).append(Component.translatable(MODID+".use_apple")));
+            }
             player.sendSystemMessage(Component.translatable(MODID + ".apple"));
         } else if (itemStack.is(Items.GUNPOWDER)) {
             //设置标志
             level.playSound(null, tableBlockEntity.getBlockPos(), SoundEvents.CHISELED_BOOKSHELF_PICKUP, SoundSource.AMBIENT, 1, 1);
             tableBlockEntity.addGunPower = true;
+            if(tableBlockEntity.isPlayer1){
+                byName(level,tableBlockEntity.name1).sendSystemMessage(Component.literal(useName).append(Component.translatable(MODID+".use_gunpowder")));
+            }
+            if(tableBlockEntity.isPlayer2){
+                byName(level,tableBlockEntity.name2).sendSystemMessage(Component.literal(useName).append(Component.translatable(MODID+".use_gunpowder")));
+            }
             player.sendSystemMessage(Component.translatable(MODID + ".gunpowder"));
         } else if (itemStack.is(Items.FISHING_ROD)) {
             level.playSound(null, tableBlockEntity.getBlockPos(), SoundEvents.FISHING_BOBBER_THROW, SoundSource.AMBIENT, 1, 1);
             //设置标志，选取对方一个物品，不能选取钓鱼竿
             tableBlockEntity.isFishingTime = true;
+            if(tableBlockEntity.isPlayer1){
+                byName(level,tableBlockEntity.name1).sendSystemMessage(Component.literal(useName).append(Component.translatable(MODID+".use_fishing_rod")));
+            }
+            if(tableBlockEntity.isPlayer2){
+                byName(level,tableBlockEntity.name2).sendSystemMessage(Component.literal(useName).append(Component.translatable(MODID+".use_fishing_rod")));
+            }
             player.sendSystemMessage(Component.translatable(MODID + ".fishing_rod"));
         } else if (itemStack.is(Items.OBSERVER)) {
+            if(tableBlockEntity.isPlayer1){
+                byName(level,tableBlockEntity.name1).sendSystemMessage(Component.literal(useName).append(Component.translatable(MODID+".use_observer")));
+            }
+            if(tableBlockEntity.isPlayer2){
+                byName(level,tableBlockEntity.name2).sendSystemMessage(Component.literal(useName).append(Component.translatable(MODID+".use_observer")));
+            }
             level.playSound(null, tableBlockEntity.getBlockPos(), SoundEvents.TRIPWIRE_CLICK_ON, SoundSource.AMBIENT, 1, 1);
             int i = tableBlockEntity.random.nextInt(1, tableBlockEntity.ammunition);
             player.sendSystemMessage(Component.translatable(MODID + ".observer").append(i + 1 + " ").append(Component.translatable(MODID + ".observer2")).append(tableBlockEntity.ammunitionList.get(i).getDisplayName()));
         } else if (itemStack.is(Items.PISTON)) {
             level.playSound(null, tableBlockEntity.getBlockPos(), SoundEvents.PISTON_EXTEND, SoundSource.AMBIENT, 1, 1);
-
+            if (tableBlockEntity.isPlayer1) {
+                byName(level, tableBlockEntity.name1).sendSystemMessage(Component.translatable(MODID + ".piston").append(tableBlockEntity.ammunitionList.get(0).getDisplayName()));
+            }
+            if (tableBlockEntity.isPlayer2) {
+                byName(level, tableBlockEntity.name2).sendSystemMessage(Component.translatable(MODID + ".piston").append(tableBlockEntity.ammunitionList.get(0).getDisplayName()));
+            }
             if(tableBlockEntity.isPlayer1) byName(level, tableBlockEntity.name1).sendSystemMessage(Component.translatable(MODID + ".piston").append(tableBlockEntity.ammunitionList.get(0).getDisplayName()));
             if(tableBlockEntity.isPlayer2) byName(level, tableBlockEntity.name2).sendSystemMessage(Component.translatable(MODID + ".piston").append(tableBlockEntity.ammunitionList.get(0).getDisplayName()));
             ItemStack removeItem=remove(0, tableBlockEntity.ammunitionList);
             tableBlockEntity.pistonItem.set(0,removeItem );
-            if(removeItem.is(Items.GUNPOWDER)) tableBlockEntity.goodAmmunition--;
-            if(removeItem.is(Items.REDSTONE)) tableBlockEntity.badAmmunition--;
-            tableBlockEntity.ammunition--;
-            tableBlockEntity.tntUpTime = -tableBlockEntity.roundBeginTimeMax;
+            if(!tableBlockEntity.ammunitionList.get(0).is(Items.AIR)){
+                if(removeItem.is(Items.GUNPOWDER)) tableBlockEntity.goodAmmunition--;
+                if(removeItem.is(Items.REDSTONE)) tableBlockEntity.badAmmunition--;
+                tableBlockEntity.ammunition--;
+            }else{
+                tableBlockEntity.ammunition=0;
+                tableBlockEntity.badAmmunition=0;
+                tableBlockEntity.goodAmmunition=0;
+            }
             tableBlockEntity.isPiston = true;
             tableBlockEntity.pistonTime = 0;
+            tableBlockEntity.tntUpTime = -tableBlockEntity.roundBeginTimeMax;
+
         }
         tableBlockEntity.oldHealth1=tableBlockEntity.health1;
         tableBlockEntity.oldHealth2=tableBlockEntity.health2;

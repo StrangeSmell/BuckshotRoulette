@@ -39,7 +39,7 @@ minecraft {
         }
 
         client {
-            args '--username', 'xiang1'
+            args '--username', 'xiang3'
             // Comma-separated list of name
             // spaces to load gametests from. Empty = all namespaces.
             property 'forge.enabledGameTestNamespaces', mod_id

@@ -1,0 +1,6 @@
+{
+  "type": "buckshotroulette:deliciousness",
+  "biomes": "#minecraft:has_structure/pillager_outpost",
+  "spawn_overrides": {},
+  "step": "surface_structures"
+}

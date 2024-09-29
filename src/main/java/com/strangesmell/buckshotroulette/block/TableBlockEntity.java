@@ -174,7 +174,7 @@ public class TableBlockEntity extends BlockEntity {
     }
 
     public void initTool() {
-        player1ToolNum = random.nextInt(1, 6);
+        player1ToolNum = random.nextInt(1, Math.min(maxHealth+2,6));
         player2ToolNum = player1ToolNum;
         if(isPlayer1){
             byName(level, name1).sendSystemMessage(Component.translatable("toolNum").append(player1ToolNum + ""));
