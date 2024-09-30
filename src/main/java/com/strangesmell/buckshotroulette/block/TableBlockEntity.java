@@ -90,6 +90,7 @@ public class TableBlockEntity extends BlockEntity {
 
     public boolean player1IsWeb;
     public boolean player2IsWeb;
+    public int webRound;
 
     public boolean shouldReRandom;
     public boolean spyglass;
@@ -126,6 +127,7 @@ public class TableBlockEntity extends BlockEntity {
         attackTime = false;
         player1IsWeb = false;
         player2IsWeb = false;
+        webRound = 0;
         player1CanAddItem = true;
         player2CanAddItem = true;
         isPlayer1 = true;
@@ -238,6 +240,7 @@ public class TableBlockEntity extends BlockEntity {
         attackTime = false;
         player1IsWeb = false;
         player2IsWeb = false;
+        webRound = 0;
         player1CanAddItem = true;
         player2CanAddItem = true;
         isPlayer2 = true;
@@ -285,6 +288,7 @@ public class TableBlockEntity extends BlockEntity {
         attackTime = compound.getBoolean(MODID + " attackTime");
         player1IsWeb = compound.getBoolean(MODID + " player1IsWeb");
         player2IsWeb = compound.getBoolean(MODID + " player2IsWeb");
+        webRound = compound.getInt(MODID + " webRound");
         player1CanAddItem = compound.getBoolean(MODID + " player1CanAddItem");
         player2CanAddItem = compound.getBoolean(MODID + " player2CanAddItem");
         isPlayer1 = compound.getBoolean(MODID + " isPlayer1");
@@ -349,6 +353,7 @@ public class TableBlockEntity extends BlockEntity {
         compound.putBoolean(MODID + " attackTime", attackTime);
         compound.putBoolean(MODID + " player1IsWeb", player1IsWeb);
         compound.putBoolean(MODID + " player2IsWeb", player2IsWeb);
+        compound.putInt(MODID + " webRound", webRound);
         compound.putBoolean(MODID + " player1CanAddItem", player1CanAddItem);
         compound.putBoolean(MODID + " player2CanAddItem", player2CanAddItem);
         compound.putBoolean(MODID + " isPlayer1", isPlayer1);

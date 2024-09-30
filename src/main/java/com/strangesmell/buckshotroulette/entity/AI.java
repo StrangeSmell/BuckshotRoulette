@@ -31,7 +31,7 @@ public class AI {
     public String selectPlayerAI(TableBlockEntity tableBlockEntity, Dealer dealer) {
         //使用tnt时选取哪一个玩家
         int usedNum = getUsedNum(tableBlockEntity);
-        if (dealer.ammunitionList.get(usedNum).is(Items.GUNPOWDER) || getPercentageOfTNT(tableBlockEntity, dealer) > 0.5) {
+        if (dealer.ammunitionList.get(usedNum).is(Items.GUNPOWDER) || getPercentageOfTNT(tableBlockEntity, dealer) >= 0.5) {
             if (dealer.getPlace() == 1) return tableBlockEntity.name2;
             if (dealer.getPlace() == 2) return tableBlockEntity.name1;
         } else {
@@ -86,12 +86,12 @@ public class AI {
             //todo:若对方有鱼竿则尽量浪费道具
             if (isPlayer1(tableBlockEntity, dealer)) {            //本恼鬼是玩家1
                 //蛛网
-                if (toolnum1[3] > 0&&!tableBlockEntity.player2IsWeb) {                            //先手使用 蛛网
+                if (toolnum1[3] > 0&&!tableBlockEntity.player2IsWeb&&tableBlockEntity.webRound==0) {                            //先手使用 蛛网
                     addAllToolIndex(1, COBWEB, toolList1, toolList, index);
                     toolnum1[3]--;
                 }
                 if (toolnum1[0] > 0) {       //若有鱼竿
-                    if (toolnum1[0] > 0 && toolnum2[3] > 0) {         //且对手有蜘蛛网
+                    if (toolnum1[0] > 0 && toolnum2[3] > 0) {      //且对手有蜘蛛网
                         addAllToolIndex(1, FISHING_ROD, toolList1, toolList, index);//todo:若能秒则不用
                         toolnum1[0]--;
                         addAllToolIndex(1, COBWEB, toolList2, toolList, index);
@@ -220,7 +220,7 @@ public class AI {
                 }
 
                 //苹果
-                if (toolnum1[2]>0) {
+                if (toolnum2[2]>0) {
                     if (toolnum1[0]==0) {     //对方没有鱼钩
                         if (tableBlockEntity.name2.equals(dealer.getTableName())) {//todo:若能秒对方，则不使用苹果
                             if (tableBlockEntity.health2 != tableBlockEntity.maxHealth) {
@@ -234,7 +234,7 @@ public class AI {
                     }
                 }
                 //检测器
-                if (toolnum1[7]>0) {//todo:加入一定概率的使用条件，若知道是否是tnt的概率小则用一个
+                if (toolnum2[7]>0) {//todo:加入一定概率的使用条件，若知道是否是tnt的概率小则用一个
                     if (dealer.ammunitionList.get(getUsedNum(tableBlockEntity)).isEmpty()) {
                         while ((getPercentageOfTNT(tableBlockEntity, dealer) < 0.7 && getPercentageOfTNT(tableBlockEntity, dealer) > 0.3)&&toolnum2[getIndex(OBSERVER)]>0) {
                             addAllToolIndex(1, OBSERVER, toolList2, toolList, index);
@@ -243,7 +243,7 @@ public class AI {
                     }
                 }
                 //望远镜
-                if (toolnum1[1]>0) {//todo:加入一定概率的使用条件，若知道是否是tnt的概率小则用一个
+                if (toolnum2[1]>0) {//todo:加入一定概率的使用条件，若知道是否是tnt的概率小则用一个
                     if (dealer.ammunitionList.get(getUsedNum(tableBlockEntity)).isEmpty()) {
                         if (getPercentageOfTNT(tableBlockEntity, dealer) < 0.7 && getPercentageOfTNT(tableBlockEntity, dealer) > 0.3) {
                             addAllToolIndex(1, SPYGLASS, toolList2, toolList, index);
@@ -252,7 +252,7 @@ public class AI {
                     }
                 }
                 //活塞
-                if (toolnum1[8]>0) {//todo:加入一定概率的使用条件，若知道是否是tnt的概率小则用一个
+                if (toolnum2[8]>0) {//todo:加入一定概率的使用条件，若知道是否是tnt的概率小则用一个
                     if (dealer.ammunitionList.get(getUsedNum(tableBlockEntity)).isEmpty()) {
                         while ((getPercentageOfTNT(tableBlockEntity, dealer) < 0.6 && getPercentageOfTNT(tableBlockEntity, dealer) > 0.4)&&toolnum2[getIndex(PISTON)]>0) {
                             addAllToolIndex(1, PISTON, toolList2, toolList, index);
@@ -342,6 +342,11 @@ public class AI {
                 redStoneNum++;
             }
         }
+        if(tableBlockEntity.ammunition - gunpowderNum - redStoneNum==0) {
+            if(redStoneNum==0) return 1;
+            if(gunpowderNum==0) return 0;
+            return (double) gunpowderNum /redStoneNum*gunpowderNum;
+        }
         return (double) (tableBlockEntity.goodAmmunition - gunpowderNum) / (double) (tableBlockEntity.ammunition - gunpowderNum - redStoneNum);
     }
 
@@ -361,6 +366,12 @@ public class AI {
                                 dealer.setPlace(2);
                                 tableBlockEntity.isRead = true;
                                 tableBlockEntity.isPlayer2 = false;
+                                if(tableBlockEntity.isPlayer1){
+                                    Player player1 = byName(level, tableBlockEntity.name1);
+                                    player1.sendSystemMessage(Component.translatable(MODID + ".all_ready"));
+                                    player1.sendSystemMessage(Component.translatable(MODID + ".take_bet"));
+                                    begin(player1);
+                                }
                             }
                         }
                     //}
@@ -759,6 +770,7 @@ public class AI {
     }
 
     public void itemFunction(String useName, ItemStack itemStack, TableBlockEntity tableBlockEntity, Level level, Dealer dealer) {
+        if(tableBlockEntity.name1==null||tableBlockEntity.name2==null)return;
         if (itemStack.is(Items.SPYGLASS)) {
             //加一个init=30的int，>0时渲染红石或者火药
             level.playSound(null, tableBlockEntity.getBlockPos(), SoundEvents.SPYGLASS_USE, SoundSource.AMBIENT, 1, 1);
