@@ -22,6 +22,7 @@ import net.minecraft.world.phys.AABB;
 
 import javax.annotation.Nullable;
 import java.util.Random;
+import java.util.UUID;
 
 import static com.strangesmell.buckshotroulette.BuckshotRoulette.MODID;
 import static com.strangesmell.buckshotroulette.block.TableBlock.*;
@@ -42,6 +43,8 @@ public class TableBlockEntity extends BlockEntity {
     public int oldHealth1;
     public int oldHealth2;
     public Boolean isRead;
+    public UUID id1;
+    public UUID id2;
     public NonNullList<ItemStack> player1 = NonNullList.withSize(8, ItemStack.EMPTY);
     public NonNullList<ItemStack> player2 = NonNullList.withSize(8, ItemStack.EMPTY);
     public int ammunitionNum;
@@ -91,6 +94,7 @@ public class TableBlockEntity extends BlockEntity {
     public boolean player1IsWeb;
     public boolean player2IsWeb;
     public int webRound;
+    public int webRound2;
 
     public boolean shouldReRandom;
     public boolean spyglass;
@@ -104,9 +108,19 @@ public class TableBlockEntity extends BlockEntity {
         super(p_155228_, p_155229_, p_155230_);
     }
 
+    public void setWebRound(int webRound) {
+       this.webRound = webRound;
+    }
+    public void setWebRound2(int webRound) {
+       this.webRound2 = webRound;
+    }
+
     public TableBlockEntity(BlockPos pPos, BlockState pBlockState) {
         super(BuckshotRoulette.TableBlockEntity.get(), pPos, pBlockState);
         isRead = false;
+        id1 = UUID.nameUUIDFromBytes("dealer".getBytes());
+        id2 = UUID.nameUUIDFromBytes("dealer".getBytes());
+
         begin = true;
         end = true;
         shouldReRandom = true;
@@ -128,6 +142,7 @@ public class TableBlockEntity extends BlockEntity {
         player1IsWeb = false;
         player2IsWeb = false;
         webRound = 0;
+        webRound2 = 0;
         player1CanAddItem = true;
         player2CanAddItem = true;
         isPlayer1 = true;
@@ -220,6 +235,8 @@ public class TableBlockEntity extends BlockEntity {
     public void initFlag() {
         tntExplosion = false;
         isRead = false;
+        id1 =UUID.nameUUIDFromBytes("dealer".getBytes());
+        id2 =UUID.nameUUIDFromBytes("dealer".getBytes());
         begin = true;
         end = true;
         shouldReRandom = true;
@@ -241,6 +258,7 @@ public class TableBlockEntity extends BlockEntity {
         player1IsWeb = false;
         player2IsWeb = false;
         webRound = 0;
+        webRound2 = 0;
         player1CanAddItem = true;
         player2CanAddItem = true;
         isPlayer2 = true;
@@ -250,6 +268,11 @@ public class TableBlockEntity extends BlockEntity {
 
     public Item getRandomItem() {
         int num = random.nextInt(0, BuckshotRoulette.items.size());
+        if(num==1) {
+            if(random.nextInt(0, 2) == 1) {
+                num= random.nextInt(0, BuckshotRoulette.items.size());
+            }
+        }
         return BuckshotRoulette.items.get(num);
     }
 
@@ -263,6 +286,8 @@ public class TableBlockEntity extends BlockEntity {
         player1WinNum = compound.getInt(MODID + " player1WinNum");
         player2WinNum = compound.getInt(MODID + " player2WinNum");
         isRead = compound.getBoolean(MODID + " table_isRead");
+        if(compound.hasUUID(MODID + " id1"))id1 = compound.getUUID(MODID + " id1");
+        if(compound.hasUUID(MODID + " id2"))id2 = compound.getUUID(MODID + " id2");
         ammunitionNum = compound.getInt(MODID + " ammunitionNum");
         ammunition = compound.getInt(MODID + " ammunition");
         badAmmunition = compound.getInt(MODID + " badAmmunition");
@@ -289,6 +314,7 @@ public class TableBlockEntity extends BlockEntity {
         player1IsWeb = compound.getBoolean(MODID + " player1IsWeb");
         player2IsWeb = compound.getBoolean(MODID + " player2IsWeb");
         webRound = compound.getInt(MODID + " webRound");
+        webRound2 = compound.getInt(MODID + " webRound2");
         player1CanAddItem = compound.getBoolean(MODID + " player1CanAddItem");
         player2CanAddItem = compound.getBoolean(MODID + " player2CanAddItem");
         isPlayer1 = compound.getBoolean(MODID + " isPlayer1");
@@ -328,6 +354,8 @@ public class TableBlockEntity extends BlockEntity {
         compound.putInt(MODID + " player1WinNum", player1WinNum);
         compound.putInt(MODID + " player2WinNum", player2WinNum);
         compound.putBoolean(MODID + " table_isRead", isRead);
+        compound.putUUID(MODID + " id1", id1);
+        compound.putUUID(MODID + " id2", id2);
         compound.putInt(MODID + " ammunitionNum", ammunitionNum);
         compound.putInt(MODID + " ammunition", ammunition);
         compound.putInt(MODID + " badAmmunition", badAmmunition);
@@ -354,6 +382,7 @@ public class TableBlockEntity extends BlockEntity {
         compound.putBoolean(MODID + " player1IsWeb", player1IsWeb);
         compound.putBoolean(MODID + " player2IsWeb", player2IsWeb);
         compound.putInt(MODID + " webRound", webRound);
+        compound.putInt(MODID + " webRound2", webRound2);
         compound.putBoolean(MODID + " player1CanAddItem", player1CanAddItem);
         compound.putBoolean(MODID + " player2CanAddItem", player2CanAddItem);
         compound.putBoolean(MODID + " isPlayer1", isPlayer1);

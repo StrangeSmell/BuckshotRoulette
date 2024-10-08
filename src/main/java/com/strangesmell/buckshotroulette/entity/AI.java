@@ -6,6 +6,7 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -72,6 +73,7 @@ public class AI {
     ItemStack BLACK_DYE = new ItemStack(Items.BLACK_DYE);       //6
     ItemStack OBSERVER = new ItemStack(Items.OBSERVER);         //7
     ItemStack PISTON = new ItemStack(Items.PISTON);             //8
+    ItemStack REDSTONE = new ItemStack(Items.REDSTONE);         //8
 
     public void getToolIndexList(TableBlockEntity tableBlockEntity, Dealer dealer) {
         if (dealer.shouldGetToolList) {
@@ -86,7 +88,7 @@ public class AI {
             //todo:若对方有鱼竿则尽量浪费道具
             if (isPlayer1(tableBlockEntity, dealer)) {            //本恼鬼是玩家1
                 //蛛网
-                if (toolnum1[3] > 0&&!tableBlockEntity.player2IsWeb&&tableBlockEntity.webRound==0) {                            //先手使用 蛛网
+                if (toolnum1[3] > 0&&!tableBlockEntity.player2IsWeb&&tableBlockEntity.webRound2==0) {                            //先手使用 蛛网
                     addAllToolIndex(1, COBWEB, toolList1, toolList, index);
                     toolnum1[3]--;
                 }
@@ -167,7 +169,7 @@ public class AI {
                 //染料
                 if (toolnum1[6]>0) {
                     if (tableBlockEntity.health1 >= tableBlockEntity.health2) {
-                        if (!dealer.ammunitionList.get(getUsedNum(tableBlockEntity)).equals(GUNPOWDER) || getPercentageOfTNT(tableBlockEntity, dealer) < 0.6) {
+                        if (dealer.ammunitionList.get(getUsedNum(tableBlockEntity)).equals(REDSTONE) || getPercentageOfTNT(tableBlockEntity, dealer) < 0.5) {
                             addAllToolIndex(1, BLACK_DYE, toolList1, toolList, index);
                             toolnum1[getIndex(BLACK_DYE)]--;
                         }
@@ -182,7 +184,7 @@ public class AI {
                 }
             } else {//是玩家2
                 //蛛网
-                if (toolnum2[3] > 0&&!tableBlockEntity.player1IsWeb) {                            //先手使用 蛛网
+                if (toolnum2[3] > 0&&!tableBlockEntity.player1IsWeb&&tableBlockEntity.webRound2==1) {                            //先手使用 蛛网
                     addAllToolIndex(1, COBWEB, toolList2, toolList, index);//todo:若能秒则不用
                     toolnum2[3]--;
                 }
@@ -263,7 +265,7 @@ public class AI {
                 //染料
                 if (toolnum2[6] > 0) {
                     if (tableBlockEntity.health2 >= tableBlockEntity.health1) {
-                        if (!dealer.ammunitionList.get(getUsedNum(tableBlockEntity)).equals(GUNPOWDER) || getPercentageOfTNT(tableBlockEntity, dealer) < 0.6) {
+                        if (dealer.ammunitionList.get(getUsedNum(tableBlockEntity)).equals(REDSTONE) || getPercentageOfTNT(tableBlockEntity, dealer) < 0.5) {
                             addAllToolIndex(1, BLACK_DYE, toolList2, toolList, index);
                             toolnum2[getIndex(BLACK_DYE)]--;
                         }
@@ -345,7 +347,7 @@ public class AI {
         if(tableBlockEntity.ammunition - gunpowderNum - redStoneNum==0) {
             if(redStoneNum==0) return 1;
             if(gunpowderNum==0) return 0;
-            return (double) gunpowderNum /redStoneNum*gunpowderNum;
+            return (double) gunpowderNum /redStoneNum+gunpowderNum;
         }
         return (double) (tableBlockEntity.goodAmmunition - gunpowderNum) / (double) (tableBlockEntity.ammunition - gunpowderNum - redStoneNum);
     }
@@ -360,11 +362,13 @@ public class AI {
                             tableBlockEntity.name1 = dealer.getStringName() + "1";
                             dealer.setPlace(1);
                             tableBlockEntity.isPlayer1 = false;
+                            tableBlockEntity.id1=dealer.getUUID();
                         } else {
                             if (tableBlockEntity.name2.equals("")&&dealer.getPlace()!=1&&dealer.canJoinPlayer2) {
                                 tableBlockEntity.name2 = dealer.getStringName() + "2";
                                 dealer.setPlace(2);
                                 tableBlockEntity.isRead = true;
+                                tableBlockEntity.id2=dealer.getUUID();
                                 tableBlockEntity.isPlayer2 = false;
                                 if(tableBlockEntity.isPlayer1){
                                     Player player1 = byName(level, tableBlockEntity.name1);
@@ -477,10 +481,19 @@ public class AI {
                         tableBlockEntity.player2IsWeb = false;
                         tableBlockEntity.player2Round = false;
                         tableBlockEntity.player1Round = true;
+                        tableBlockEntity.setWebRound2(1);//跳过了一回合
+
                         return;
                     }
+
                     if(tableBlockEntity.player1IsWeb){
                         tableBlockEntity.toolTime=false;
+                        tableBlockEntity.player1Round = false;
+                        tableBlockEntity.player2Round = true;
+                        tableBlockEntity.player1IsWeb = false;
+                        tableBlockEntity.setWebRound(1);//跳过了一回合
+                    }else{
+                        if(tableBlockEntity.player1Round ) if(tableBlockEntity.webRound==1) tableBlockEntity.setWebRound(0);
                     }
                     if (isPlayer1(tableBlockEntity, dealer)) {
                         getToolIndexList(tableBlockEntity, dealer);
@@ -576,6 +589,7 @@ public class AI {
                                 }
                                 if (index >= 0 && index < 8) {
                                     ItemStack itemStack = tableBlockEntity.player2.get(index);
+                                    if (tableBlockEntity.webRound2==1&&itemStack.is(Items.COBWEB)) return ;
                                     if (itemStack.is(Items.FISHING_ROD)) return;
                                     tableBlockEntity.player2.set(index, ItemStack.EMPTY);
                                     level.playSound(null, tableBlockEntity.getBlockPos(), SoundEvents.FISHING_BOBBER_RETRIEVE, SoundSource.AMBIENT, 1, 1);
@@ -599,6 +613,7 @@ public class AI {
                                 } else {
                                     //使用道具
                                     ItemStack itemStack = tableBlockEntity.player1.get(index);
+                                    if (tableBlockEntity.webRound2==1&&itemStack.is(Items.COBWEB)) return ;
                                     tableBlockEntity.moveItem1.set(index, itemStack);
                                     tableBlockEntity.moveItem1Time[index] = 20;
                                     itemFunction(dealer.getTableName(), itemStack, tableBlockEntity, level, dealer);
@@ -630,10 +645,18 @@ public class AI {
                         tableBlockEntity.player1IsWeb = false;
                         tableBlockEntity.player1Round = false;
                         tableBlockEntity.player2Round = true;
+                        tableBlockEntity.setWebRound(1);//跳过了一回合
+
                         return;
                     }
                     if(tableBlockEntity.player2IsWeb){
                         tableBlockEntity.toolTime=false;
+                        tableBlockEntity.player2Round = false;
+                        tableBlockEntity.player1Round = true;
+                        tableBlockEntity.player2IsWeb = false;
+                        tableBlockEntity.setWebRound2(1);
+                    }else{
+                        if(tableBlockEntity.player2Round ) if(tableBlockEntity.webRound2==1) tableBlockEntity.setWebRound2(0);
                     }
                     if (!isPlayer1(tableBlockEntity, dealer)) {
                         getToolIndexList(tableBlockEntity, dealer);
@@ -732,6 +755,7 @@ public class AI {
                                         index = getRandomRightIndex(tableBlockEntity.player1);
                                     }
                                     ItemStack itemStack = tableBlockEntity.player1.get(index);
+                                    if (tableBlockEntity.webRound==1&&itemStack.is(Items.COBWEB)) return ;
                                     if (itemStack.is(Items.FISHING_ROD)) return;
                                     tableBlockEntity.player1.set(index, ItemStack.EMPTY);
                                     level.playSound(null, tableBlockEntity.getBlockPos(), SoundEvents.FISHING_BOBBER_RETRIEVE, SoundSource.AMBIENT, 1, 1);
@@ -751,6 +775,7 @@ public class AI {
                                 } else {
                                     //使用道具
                                     ItemStack itemStack = tableBlockEntity.player2.get(index);
+                                    if (tableBlockEntity.webRound==1&&itemStack.is(Items.COBWEB)) return ;
                                     tableBlockEntity.moveItem2.set(index, itemStack);
                                     tableBlockEntity.moveItem2Time[index] = 20;
                                     itemFunction(dealer.getTableName(), itemStack, tableBlockEntity, level, dealer);

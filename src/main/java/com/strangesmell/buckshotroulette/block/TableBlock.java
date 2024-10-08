@@ -13,6 +13,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
@@ -34,6 +35,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 import static com.strangesmell.buckshotroulette.BuckshotRoulette.MODID;
+import static com.strangesmell.buckshotroulette.BuckshotRoulette.items;
 import static com.strangesmell.buckshotroulette.Util.remove;
 
 
@@ -45,6 +47,21 @@ public class TableBlock extends BaseEntityBlock {
     }
 
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult result) {
+        if (level.getBlockEntity(pos) instanceof TableBlockEntity tableBlockEntity) {
+            if(player.isCreative()&&isInTools(player.getItemInHand(player.getUsedItemHand()))) {
+                Vec3 viewPose = result.getLocation();
+                int index=0;
+                if (viewPose.z - pos.getZ() > 0.5) {
+                    index = getPlayer1Index(state, level, pos, player, hand, result);
+                    if((index>=8||index<0)||!tableBlockEntity.isRead) return InteractionResult.PASS;
+                    tableBlockEntity.player1.set(index,player.getItemInHand(player.getUsedItemHand()));
+                }else {
+                    index = getPlayer2Index(state, level, pos, player, hand, result);
+                    if((index>=8||index<0)||!tableBlockEntity.isRead) return InteractionResult.PASS;
+                    tableBlockEntity.player2.set(index,player.getItemInHand(player.getUsedItemHand()));
+                }
+            }
+        }
         if (level.isClientSide) {
             return InteractionResult.SUCCESS;
         } else {
@@ -55,12 +72,14 @@ public class TableBlock extends BaseEntityBlock {
                         //if (true) {
                             if (tableBlockEntity.name1.equals("")) {
                                 tableBlockEntity.isPlayer1=true;
+                                tableBlockEntity.id1=player.getUUID();
                                 tableBlockEntity.name1 = player.getName().getString();
                                 player.sendSystemMessage(Component.translatable(MODID + ".ready"));
                                 player.sendSystemMessage(Component.translatable(MODID + ".ready2").withStyle(ChatFormatting.RED));
                             } else {
                                 if (tableBlockEntity.name2.equals("")) {
                                     tableBlockEntity.isPlayer2=true;
+                                    tableBlockEntity.id2=player.getUUID();
                                     tableBlockEntity.name2 = player.getName().getString();
                                     player.sendSystemMessage(Component.translatable(MODID + ".ready"));
                                     player.sendSystemMessage(Component.translatable(MODID + ".ready2").withStyle(ChatFormatting.RED));
@@ -160,8 +179,9 @@ public class TableBlock extends BaseEntityBlock {
                         level.sendBlockUpdated(pos, state, state, 2);
                     }
 
-                    if ((tableBlockEntity.player1Round || tableBlockEntity.player2IsWeb) && !tableBlockEntity.roundBegin) {
+                    if ((tableBlockEntity.player1Round || tableBlockEntity.player2IsWeb) && !tableBlockEntity.roundBegin&&tableBlockEntity.chestFinish) {
                         tableBlockEntity.toolTime=true;
+                        //为了能让玩家一可以在玩家2被网时解放蜘蛛网
                         if (tableBlockEntity.player2IsWeb && tableBlockEntity.player2Round) {
                             player.sendSystemMessage(Component.literal(tableBlockEntity.name2).append(Component.translatable("isWeb")));
                             tableBlockEntity.player2IsWeb = false;
@@ -170,9 +190,12 @@ public class TableBlock extends BaseEntityBlock {
                         }
                         if(tableBlockEntity.player1IsWeb){
                             tableBlockEntity.toolTime=false;
-                            tableBlockEntity.webRound=1;//跳过了一回合
+                            tableBlockEntity.player1Round = false;
+                            tableBlockEntity.player2Round = true;
+                            tableBlockEntity.player1IsWeb = false;
+                            tableBlockEntity.setWebRound(1);//跳过了一回合
                         }else{
-                            if(tableBlockEntity.webRound==1) tableBlockEntity.webRound=0;
+                           if(tableBlockEntity.player1Round ) if(tableBlockEntity.webRound==1) tableBlockEntity.setWebRound(0);
                         }
                         if (player.getName().getString().equals(tableBlockEntity.name1)) {
                             //某玩家回合flag：player1=true。player2=false
@@ -224,7 +247,7 @@ public class TableBlock extends BaseEntityBlock {
                                         tableBlockEntity.player1Round = false;
                                         tableBlockEntity.player2Round = true;
                                     } else {
-                                        tableBlockEntity.tntExplosion=false;
+                                        tableBlockEntity.tntExplosion = false;
                                         if (select.equals(tableBlockEntity.name1)) {
                                             tableBlockEntity.tntStartTime = tableBlockEntity.roundBeginTimeMax;
                                             byName(level, tableBlockEntity.name1).sendSystemMessage(Component.translatable("continue"));
@@ -248,7 +271,8 @@ public class TableBlock extends BaseEntityBlock {
                                     if (fishIndex >= 0 && fishIndex < 8) {
                                         ItemStack itemStack = tableBlockEntity.player2.get(fishIndex);
                                         if (itemStack.is(Items.FISHING_ROD)) return InteractionResult.CONSUME;
-                                        if (tableBlockEntity.webRound==1) return InteractionResult.CONSUME;
+                                        if (tableBlockEntity.webRound2==1&&itemStack.is(Items.COBWEB)) return InteractionResult.CONSUME;
+
                                         tableBlockEntity.player2.set(fishIndex, ItemStack.EMPTY);
                                         level.playSound(null, tableBlockEntity.getBlockPos(), SoundEvents.FISHING_BOBBER_RETRIEVE, SoundSource.AMBIENT, 1, 1);
                                         itemFunction(tableBlockEntity.name1, itemStack, tableBlockEntity, level, player);
@@ -271,7 +295,8 @@ public class TableBlock extends BaseEntityBlock {
                                     } else {
                                         //使用道具
                                         ItemStack itemStack = tableBlockEntity.player1.get(index);
-                                        if (tableBlockEntity.webRound==1) return InteractionResult.CONSUME;
+                                        if (tableBlockEntity.webRound2==1&&itemStack.is(Items.COBWEB)) return InteractionResult.CONSUME;
+
                                         tableBlockEntity.moveItem1.set(index, itemStack);
                                         tableBlockEntity.moveItem1Time[index] = 20;
                                         itemFunction(player.getName().getString(), itemStack, tableBlockEntity, level, player);
@@ -287,7 +312,7 @@ public class TableBlock extends BaseEntityBlock {
                         }
 
                     }
-                    if ((tableBlockEntity.player2Round || tableBlockEntity.player1IsWeb) && !tableBlockEntity.roundBegin) {
+                    if ((tableBlockEntity.player2Round || tableBlockEntity.player1IsWeb) && !tableBlockEntity.roundBegin&&tableBlockEntity.chestFinish) {
                         tableBlockEntity.toolTime=true;
                         if (tableBlockEntity.player1IsWeb && tableBlockEntity.player1Round) {
                             player.sendSystemMessage(Component.literal(tableBlockEntity.name1).append(Component.translatable("isWeb")));
@@ -297,9 +322,12 @@ public class TableBlock extends BaseEntityBlock {
                         }
                         if(tableBlockEntity.player2IsWeb){
                             tableBlockEntity.toolTime=false;
-                            tableBlockEntity.webRound=1;
+                            tableBlockEntity.player2Round = false;
+                            tableBlockEntity.player1Round = true;
+                            tableBlockEntity.player2IsWeb = false;
+                            tableBlockEntity.setWebRound2(1);
                         }else{
-                            if(tableBlockEntity.webRound==1) tableBlockEntity.webRound=0;
+                            if(tableBlockEntity.player2Round ) if(tableBlockEntity.webRound2==1) tableBlockEntity.setWebRound2(0);
                         }
                         if (player.getName().getString().equals(tableBlockEntity.name2)) {
                             //某玩家回合flag：player1=true。player2=false
@@ -376,7 +404,7 @@ public class TableBlock extends BaseEntityBlock {
                                     if (fishIndex >= 0 && fishIndex < 8) {
                                         ItemStack itemStack = tableBlockEntity.player1.get(fishIndex);
                                         if (itemStack.is(Items.FISHING_ROD)) return InteractionResult.CONSUME;
-                                        if (tableBlockEntity.webRound==1) return InteractionResult.CONSUME;
+                                        if (tableBlockEntity.webRound==1&&itemStack.is(Items.COBWEB)) return InteractionResult.CONSUME;
                                         tableBlockEntity.player1.set(fishIndex, ItemStack.EMPTY);
                                         level.playSound(null, tableBlockEntity.getBlockPos(), SoundEvents.FISHING_BOBBER_RETRIEVE, SoundSource.AMBIENT, 1, 1);
                                         itemFunction(tableBlockEntity.name2, itemStack, tableBlockEntity, level, player);
@@ -399,7 +427,7 @@ public class TableBlock extends BaseEntityBlock {
                                     } else {
                                         //使用道具
                                         ItemStack itemStack = tableBlockEntity.player2.get(index);
-                                        if (tableBlockEntity.webRound==1) return InteractionResult.CONSUME;
+                                        if (tableBlockEntity.webRound==1&&itemStack.is(Items.COBWEB)) return InteractionResult.CONSUME;
                                         tableBlockEntity.moveItem2.set(index, itemStack);
                                         tableBlockEntity.moveItem2Time[index] = 20;
                                         itemFunction(player.getName().getString(), itemStack, tableBlockEntity, level, player);
@@ -623,6 +651,7 @@ public class TableBlock extends BaseEntityBlock {
             } else {
                 tableBlockEntity.player1IsWeb = true;
             }
+
             if(tableBlockEntity.isPlayer1){
                 byName(level,tableBlockEntity.name1).sendSystemMessage(Component.literal(useName).append(Component.translatable(MODID+".use_cobweb")));
             }
@@ -743,18 +772,16 @@ public class TableBlock extends BaseEntityBlock {
             ItemStack removeItem=remove(0, tableBlockEntity.ammunitionList);
             tableBlockEntity.pistonItem.set(0,removeItem );
             if(!tableBlockEntity.ammunitionList.get(0).is(Items.AIR)){
+
                 if(removeItem.is(Items.GUNPOWDER)) tableBlockEntity.goodAmmunition--;
                 if(removeItem.is(Items.REDSTONE)) tableBlockEntity.badAmmunition--;
                 tableBlockEntity.ammunition--;
-            }else{
-                tableBlockEntity.ammunition=0;
-                tableBlockEntity.badAmmunition=0;
-                tableBlockEntity.goodAmmunition=0;
             }
+
             tableBlockEntity.isPiston = true;
             tableBlockEntity.pistonTime = 0;
             tableBlockEntity.tntUpTime = -tableBlockEntity.roundBeginTimeMax;
-
+            outOfAmmunition(tableBlockEntity);
         }
         tableBlockEntity.oldHealth1=tableBlockEntity.health1;
         tableBlockEntity.oldHealth2=tableBlockEntity.health2;
@@ -778,5 +805,12 @@ public class TableBlock extends BaseEntityBlock {
     @Override
     public BlockEntity newBlockEntity(BlockPos pPos, BlockState pState) {
         return new TableBlockEntity(pPos, pState);
+    }
+
+    public static boolean isInTools(ItemStack itemStack) {
+        for(Item item : items){
+            if(itemStack.is(item))return true;
+        }
+        return false;
     }
 }

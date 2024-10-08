@@ -40,6 +40,7 @@ import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nullable;
 import java.util.EnumSet;
+import java.util.UUID;
 
 
 public class Dealer extends Monster {
@@ -52,9 +53,9 @@ public class Dealer extends Monster {
     private BlockPos boundOrigin;
     private boolean hasLimitedLife;
     private boolean hasTable;
-    public boolean canJoinPlayer2=false;
+    public boolean canJoinPlayer2 = false;
     private int limitedLifeTicks;
-    public int stepTicks=0;
+    public int stepTicks = 0;
 
     public String getTableName() {
         return this.getDisplayName().getString() + getPlace();
@@ -86,7 +87,7 @@ public class Dealer extends Monster {
     }
 
     public void tick() {
-        if(stepTicks>0) stepTicks--;
+        if (stepTicks > 0) stepTicks--;
         this.noPhysics = true;
         super.tick();
         this.noPhysics = false;
@@ -222,7 +223,7 @@ public class Dealer extends Monster {
         }
 
         public boolean canUse() {
-            return level().getGameTime() % 30 == 0||(level().getGameTime()-1) % 20==0;
+            return level().getGameTime() % 30 == 0 || (level().getGameTime() - 1) % 20 == 0;
 
         }
 
@@ -258,8 +259,8 @@ public class Dealer extends Monster {
 
         public void start() {
             if (findNearestBlock()) {
-                if(Dealer.this.getPlace()==2){
-                    Dealer.this.moveControl.setWantedPosition(blockPos.getX() + 0.5, blockPos.getY() + 1, blockPos.getZ() , 1.0D);
+                if (Dealer.this.getPlace() == 2) {
+                    Dealer.this.moveControl.setWantedPosition(blockPos.getX() + 0.5, blockPos.getY() + 1, blockPos.getZ(), 1.0D);
                     return;
                 }
                 Dealer.this.moveControl.setWantedPosition(blockPos.getX() + 0.5, blockPos.getY() + 1, blockPos.getZ() + 1, 1.0D);
@@ -278,15 +279,21 @@ public class Dealer extends Monster {
             if (!p_25153_.isEmptyBlock(pos.above())) {
                 return false;
             } else {
-                BlockState blockstate = p_25153_.getBlockState(pos);
-                if (blockstate.is(BuckshotRoulette.TableBlock.get())) {
-                    if(Dealer.this.canJoinPlayer2){
-                        return ((TableBlockEntity) (dealer.level().getBlockEntity(pos))).name1.equals("")||((TableBlockEntity) (dealer.level().getBlockEntity(pos))).name1.equals(dealer.getTableName())||((TableBlockEntity) (dealer.level().getBlockEntity(pos))).name2.equals("")||((TableBlockEntity) (dealer.level().getBlockEntity(pos))).name2.equals(dealer.getTableName());
-                    }else{
-                        return ((TableBlockEntity) (dealer.level().getBlockEntity(pos))).name1.equals("")||((TableBlockEntity) (dealer.level().getBlockEntity(pos))).name1.equals(dealer.getTableName());
+                if (dealer.level().getBlockEntity(pos) instanceof TableBlockEntity tableBlockEntity) {
+                    if (Dealer.this.canJoinPlayer2) {
+                        if (tableBlockEntity.id2 != dealer.getUUID() && !tableBlockEntity.id2.equals(UUID.nameUUIDFromBytes("dealer".getBytes())))
+                            return false;
+                        if (tableBlockEntity.id2 == dealer.getUUID()) return true;
+                        return (tableBlockEntity.name1.equals("") || tableBlockEntity.name1.equals(dealer.getTableName()) || tableBlockEntity.name2.equals("") || tableBlockEntity.name2.equals(dealer.getTableName()));
+                    } else {
+                        if (tableBlockEntity.id1 != dealer.getUUID() && !tableBlockEntity.id1.equals(UUID.nameUUIDFromBytes("dealer".getBytes())))
+                            return false;
+                        if (tableBlockEntity.id1 == dealer.getUUID()) return true;
+                        return (tableBlockEntity.name1.equals("") || tableBlockEntity.name1.equals(dealer.getTableName()));
                     }
-                    //return ((TableBlockEntity) (dealer.level().getBlockEntity(pos))).name1.equals("")||((TableBlockEntity) (dealer.level().getBlockEntity(pos))).name1.equals(dealer.getTableName());
-                } else return false;
+
+                }else return false;
+
             }
         }
 
@@ -295,9 +302,9 @@ public class Dealer extends Monster {
             if (blockEntity instanceof TableBlockEntity tableBlockEntity) {
                 stepTicks--;
                 AI ai = new AI();
-                if(stepTicks<=0&&tableBlockEntity.tntStartTime==0){
+                if (stepTicks <= 0 && tableBlockEntity.tntStartTime == 0) {
                     ai.use(tableBlockEntity, dealer);
-                    stepTicks=20;
+                    stepTicks = 20;
                 }
 
             }
@@ -358,10 +365,10 @@ public class Dealer extends Monster {
                 BlockPos blockpos1;
                 if (Dealer.this.hasTable) {
                     blockpos1 = blockpos.offset(Dealer.this.random.nextInt(1), Dealer.this.random.nextInt(1), Dealer.this.random.nextInt(1));
-                    if(Dealer.this.getPlace()==1){
-                        Dealer.this.moveControl.setWantedPosition((double) blockpos1.getX()+0.5, (double) blockpos1.getY() + 1, (double) blockpos1.getZ()+1, 0.25D);
-                    }else if(Dealer.this.getPlace()==2){
-                        Dealer.this.moveControl.setWantedPosition((double) blockpos1.getX()+0.5, (double) blockpos1.getY() + 1, (double) blockpos1.getZ(), 0.25D);
+                    if (Dealer.this.getPlace() == 1) {
+                        Dealer.this.moveControl.setWantedPosition((double) blockpos1.getX() + 0.5, (double) blockpos1.getY() + 1, (double) blockpos1.getZ() + 1, 0.25D);
+                    } else if (Dealer.this.getPlace() == 2) {
+                        Dealer.this.moveControl.setWantedPosition((double) blockpos1.getX() + 0.5, (double) blockpos1.getY() + 1, (double) blockpos1.getZ(), 0.25D);
                     }
                     if (Dealer.this.getTarget() == null) {
                         Dealer.this.getLookControl().setLookAt((double) blockpos1.getX() + 0.5D, (double) blockpos1.getY() + 0.5D, (double) blockpos1.getZ() + 0.5D, 180.0F, 20.0F);
